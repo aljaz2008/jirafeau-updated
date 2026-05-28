@@ -6,8 +6,7 @@ ARG APP_GID=10001
 
 RUN addgroup -g ${APP_GID} -S jirafeau \
     && adduser -u ${APP_UID} -S -D -H -G jirafeau jirafeau \
-    && apk add --no-cache tini fcgi \
-    && mkdir -p /var/www/html /run/php /var/lib/jirafeau/{files,links,async} /tmp/jirafeau \
+    && mkdir -p /var/www/html /run/php /var/lib/jirafeau/files /var/lib/jirafeau/links /var/lib/jirafeau/async /tmp/jirafeau \
     && chown -R jirafeau:jirafeau /var/www/html /run/php /var/lib/jirafeau /tmp/jirafeau
 
 WORKDIR /var/www/html
@@ -23,5 +22,4 @@ EXPOSE 9000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["/usr/local/bin/healthcheck.sh"]
 
-ENTRYPOINT ["/sbin/tini","--"]
 CMD ["php-fpm","-F","-O"]
