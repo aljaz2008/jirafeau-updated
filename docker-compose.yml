@@ -14,7 +14,7 @@ services:
       TZ: ${TZ:-UTC}
     volumes:
       - jirafeau-data:/var/lib/jirafeau
-      - ./lib/config.local.php:/var/www/html/lib/config.local.php:ro
+      - ./lib/${JIRAFEAU_CONFIG_FILE:-config.original.php}:/var/www/html/lib/config.local.php:ro
     healthcheck:
       test: ["CMD", "/usr/local/bin/healthcheck.sh"]
       interval: 30s
