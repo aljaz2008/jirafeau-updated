@@ -1,0 +1,9 @@
+.git
+.github
+*.md
+var/*
+!var/.gitkeep
+Dockerfile*
+docker-compose*.yml
+.env
+.env.*

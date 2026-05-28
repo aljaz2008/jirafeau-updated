@@ -1,0 +1,72 @@
+services:
+  app:
+    image: ghcr.io/example/jirafeau:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+      - /run:rw,noexec,nosuid,size=32m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      TZ: ${TZ:-UTC}
+    volumes:
+      - jirafeau-data:/var/lib/jirafeau
+      - ./lib/config.local.php:/var/www/html/lib/config.local.php:ro
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: nginx:1.27.0-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=512m
+      - /var/cache/nginx:rw,noexec,nosuid,size=128m
+      - /var/run:rw,noexec,nosuid,size=32m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cleanup:
+    image: ghcr.io/example/jirafeau:latest
+    restart: unless-stopped
+    command: ["/bin/sh", "/var/www/html/docker/cleanup.sh"]
+    environment:
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - jirafeau-data:/var/lib/jirafeau
+      - ./:/var/www/html:ro
+
+volumes:
+  jirafeau-data:
+    driver: local
